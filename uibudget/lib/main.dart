@@ -1,94 +1,75 @@
 import 'package:flutter/material.dart';
-import 'package:uibudget/components/AppbarComponent.dart';
+import 'package:uibudget/components/CarDetailsandPastPage.dart';
 import 'package:uibudget/components/DrawerComponent.dart';
-import 'package:uibudget/components/FooterComponent.dart';
 import 'package:uibudget/components/SummaryPage.dart';
+import 'package:uibudget/components/FooterComponent.dart'; // Footer'ı import etmeyi unutma
 
 void main() {
   runApp(const MyApp());
 }
 
+// --- MERKEZİ TEMA RENKLERİ ---
+const Color bgDark = Color(0xFF181216); // Ana Zemin
+const Color cardDark = Color(0xFF241A21); // Kart ve AppBar Zemini
+const Color accentPink = Color(0xFFFF7EB3); // Vurgu Pembesi
+const Color textLight = Color(0xFFF3E8EE); // Ana Metin
+const Color textMuted = Color(0xFF8B7382); // Alt Metin
+
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Bütçe Uygulaması',
+      title: 'Budget App',
       debugShowCheckedModeBanner: false,
-
-      // Temayı buradan 'ThemeMode.light', 'ThemeMode.dark' veya
-      // 'ThemeMode.system' yaparak kontrol edebilirsin.
-      themeMode: ThemeMode.light,
-
-      // ----------------------------------------------------
-      // 1. AYDINLIK PEMBE TEMA (Modern Pastel)
-      // ----------------------------------------------------
       theme: ThemeData(
-        brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(
-          0xFFFDF8FA,
-        ), // Kırık pembe/beyaz zemin
-        // Temel renk şeması
-        colorScheme: const ColorScheme.light(
-          primary: Color(0xFFF472B6), // Ana pembe (İkonlar, butonlar)
-          secondary: Color(0xFFFB7185), // İkincil vurgu rengi
-          surface: Color(0xFFFFFFFF), // Kart zeminleri
-        ),
-
-        // Drawer ve ExpansionTile için aydınlık tema ayarları
-        expansionTileTheme: const ExpansionTileThemeData(
-          textColor: Color(0xFFF472B6), // Açıkken başlık rengi (Pembe)
-          collapsedTextColor: Color(
-            0xFF4A2537,
-          ), // Kapalıyken başlık rengi (Koyu mürdüm)
-          iconColor: Color(0xFFF472B6),
-          collapsedIconColor: Color(
-            0xFF9D8493,
-          ), // Kapalı ok rengi (Soluk pembe-gri)
-          backgroundColor: Color(0xFFFFFFFF), // Açık olduğunda tile arka planı
-          collapsedBackgroundColor: Colors.transparent,
-          childrenPadding: EdgeInsets.only(left: 16),
-        ),
-      ),
-
-      // ----------------------------------------------------
-      // 2. KARANLIK PEMBE TEMA (Gece & Gül Kurusu)
-      // ----------------------------------------------------
-      darkTheme: ThemeData(
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(
-          0xFF181216,
-        ), // Çok koyu mürdüm zemin
-        // Karanlık renk şeması
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFFFF7EB3), // Karanlıkta parlayan pembe
-          secondary: Color(0xFFFFB8D1),
-          surface: Color(0xFF241A21), // Kart zeminleri (Koyu)
+        scaffoldBackgroundColor: bgDark,
+
+        // Merkezi AppBar Tasarımı
+        appBarTheme: const AppBarTheme(
+          backgroundColor: bgDark,
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: accentPink),
+          titleTextStyle: TextStyle(
+            color: textLight,
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1.0,
+          ),
         ),
 
-        // Drawer ve ExpansionTile için karanlık tema ayarları
+        // Drawer Merkezi Tasarımı
         expansionTileTheme: const ExpansionTileThemeData(
-          textColor: Color(0xFFFF7EB3), // Açıkken başlık rengi (Parlak pembe)
-          collapsedTextColor: Color(0xFFF3E8EE), // Kapalıyken (Pembemsi beyaz)
-          iconColor: Color(0xFFFF7EB3),
-          collapsedIconColor: Color(
-            0xFF8B7382,
-          ), // Kapalı ok rengi (Muted pembe)
-          backgroundColor: Color(0xFF241A21), // Açık olduğunda tile arka planı
+          textColor: accentPink,
+          collapsedTextColor: textLight,
+          iconColor: accentPink,
+          collapsedIconColor: textMuted,
+          backgroundColor: cardDark,
           collapsedBackgroundColor: Colors.transparent,
           childrenPadding: EdgeInsets.only(left: 16),
         ),
+
+        // --- YENİ: Footer (BottomNavigationBar) Merkezi Tasarımı ---
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: cardDark, // Alt menü zemini kartlarla uyumlu olsun
+          selectedItemColor: accentPink, // Seçili olan pembe parlasın
+          unselectedItemColor: textMuted, // Seçili olmayanlar soluk gül kurusu
+          showUnselectedLabels:
+              true, // Seçili olmayanların yazısı görünsün mü? (İsteğe bağlı)
+          type: BottomNavigationBarType.fixed,
+          elevation: 8, // Üstte hafif bir gölge oluşturur
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const MyHomePage(title: 'Bütçe Özeti'),
     );
   }
 }
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
-
   final String title;
 
   @override
@@ -99,16 +80,27 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size(.infinity, 80),
-        child: Appbarcomponent(),
+      appBar: AppBar(
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_none, color: textMuted),
+            onPressed: () {},
+          ),
+        ],
       ),
-      drawer: Drawercomponent(
-        // backgroundColor: Color.fromRGBO(24, 24, 36, 1),
-        semanticLabel: "Kursat",
+      drawer: const Drawercomponent(semanticLabel: "Kürşat"),
+      // body: const Summarypage(userName: "Kürşat"),
+      body: Cardetailsandpastpage(
+        title: "Sally",
+        name: "Kürşat",
+        brand: "Toyota",
+        model: "Yaris",
+        year: "2017",
       ),
-      body: Summarypage(userName: "Kursat"),
-      bottomNavigationBar: Footercomponent(),
+
+      // YENİ: Footer bileşenini Scaffold'un bottomNavigationBar özelliğine ekliyoruz
+      bottomNavigationBar: const Footercomponent(),
     );
   }
 }

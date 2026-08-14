@@ -1,64 +1,72 @@
-// import 'package:flutter/material.dart';
-
-// class SummaryCardComponent extends StatelessWidget {
-//   const SummaryCardComponent({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // TODO: implement build
-//     return Card(
-//       elevation: 4,
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         mainAxisSize: MainAxisSize.min,
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         spacing: 8,
-//         children: [
-//           Icon(Icons.wallet),
-//           Text("Toplam Harcama"),
-//           Text("234342432 USD"),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 
 class SummaryCardComponent extends StatelessWidget {
-  const SummaryCardComponent({super.key});
+  final String title;
+  final String amount;
+  final IconData icon;
+  final bool isPrimary; // Kartın vurgulu olup olmayacağını belirler
+
+  const SummaryCardComponent({
+    super.key,
+    required this.title,
+    required this.amount,
+    required this.icon,
+    this.isPrimary = false,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 2, // Çok yüksek gölge göz yorar, 2 idealdir
+      color: const Color(0xFF241A21), // cardDark
+      elevation: 0,
+      margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16), // Köşeleri yumuşattık
+        borderRadius: BorderRadius.circular(16),
+        // Ana kart ise belirgin pembe çerçeve, değilse çok silik çerçeve
+        side: BorderSide(
+          color: isPrimary
+              ? const Color(0xFFFF7EB3).withOpacity(0.5)
+              : const Color(0xFF8B7382).withOpacity(0.1),
+          width: 1.5,
+        ),
       ),
-      // Kartın içine doğrudan Column koymak yerine Padding ekliyoruz
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Sola dayalı
-          mainAxisAlignment:
-              MainAxisAlignment.spaceBetween, // İçeriği yukarı ve aşağı dağıt
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 32,
-              // color: Color(0xFF00ADB5), // Temandaki petrol yeşili rengin
+            Icon(
+              icon,
+              size: 28,
+              color: isPrimary
+                  ? const Color(0xFFFF7EB3)
+                  : const Color(0xFF8B7382),
             ),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
+              children: [
                 Text(
-                  "Toplam Harcama",
-                  // style: TextStyle(fontSize: 14, color: Colors.grey),
+                  title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF8B7382), // textMuted
+                    letterSpacing: 0.3,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
-                  "₺ 3.145,20",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  amount,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isPrimary
+                        ? const Color(0xFFFF7EB3)
+                        : const Color(0xFFF3E8EE), // Vurgulu kartta tutar pembe
+                  ),
                 ),
               ],
             ),

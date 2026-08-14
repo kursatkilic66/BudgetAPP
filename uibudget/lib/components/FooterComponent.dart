@@ -10,10 +10,10 @@ class Footercomponent extends StatelessWidget {
       type: BottomNavigationBarType.fixed,
       items: [
         BottomNavigationBarItem(icon: Icon(Icons.home), label: "Anasayfa"),
-        BottomNavigationBarItem(
-          icon: Icon(Icons.stacked_line_chart),
-          label: "İstatistik",
-        ),
+        // BottomNavigationBarItem(
+        //   icon: Icon(Icons.stacked_line_chart),
+        //   label: "İstatistik",
+        // ),
         BottomNavigationBarItem(icon: Icon(Icons.add), label: "Ekle"),
         BottomNavigationBarItem(icon: Icon(Icons.account_box), label: "Profil"),
       ],

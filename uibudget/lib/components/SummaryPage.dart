@@ -1,62 +1,3 @@
-// import 'package:flutter/material.dart';
-// import 'package:uibudget/components/SummaryCardComponent.dart';
-
-// class Summarypage extends StatefulWidget {
-//   final String userName;
-
-//   const Summarypage({super.key, required this.userName});
-
-//   @override
-//   State<StatefulWidget> createState() => _SummarypageState();
-// }
-
-// class _SummarypageState extends State<Summarypage> {
-//   @override
-//   Widget build(BuildContext context) {
-//     // TODO: implement build
-//     return Padding(
-//       padding: EdgeInsets.all(16),
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         // mainAxisSize: MainAxisSize.min,
-//         crossAxisAlignment: CrossAxisAlignment.center,
-//         children: [
-//           Text(
-//             "Merhaba ${widget.userName}",
-//             style: TextStyle(
-//               fontSize: 26,
-//               fontWeight: FontWeight.bold,
-//               letterSpacing: 1.2,
-//               wordSpacing: 1.2,
-//             ),
-//           ),
-//           Text(
-//             "Aylık Durumun",
-//             style: TextStyle(
-//               fontSize: 22,
-//               fontWeight: FontWeight.bold,
-//               letterSpacing: 1.2,
-//               wordSpacing: 1.2,
-//             ),
-//           ),
-//           Expanded(
-//             child: GridView.count(
-//               crossAxisCount: 2,
-//               // padding: EdgeInsets.all(12),
-//               children: [
-//                 SummaryCardComponent(),
-//                 SummaryCardComponent(),
-//                 SummaryCardComponent(),
-//                 SummaryCardComponent(),
-//               ],
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-// }
-
 import 'package:flutter/material.dart';
 import 'package:uibudget/components/SummaryCardComponent.dart';
 
@@ -73,44 +14,63 @@ class _SummarypageState extends State<Summarypage> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
-        // mainAxisSize: MainAxisSize.min BURADAN KALDIRILDI! (Varsayılan olarak .max kalmalı)
-        mainAxisAlignment: MainAxisAlignment.start, // Yukarıdan başla
-        crossAxisAlignment: CrossAxisAlignment
-            .start, // Yazıları sola daya (Dashboard görünümü için)
+        crossAxisAlignment: CrossAxisAlignment.start, // Sola dayalı düzen
         children: [
           Text(
-            "Merhaba ${widget.userName}",
+            "Merhaba ${widget.userName},",
             style: const TextStyle(
-              fontSize: 18, // Biraz küçülttük ki kurumsal dursun
-              // color: Colors.grey, // Alt başlık hissiyatı
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF8B7382), // textMuted
+              letterSpacing: 0.5,
             ),
           ),
-          SizedBox(height: 24),
           const SizedBox(height: 4),
           const Text(
             "Aylık Durumun",
             style: TextStyle(
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: FontWeight.bold,
-              letterSpacing: 1.2,
+              color: Color(0xFFF3E8EE), // textLight
+              letterSpacing: 1.0,
             ),
           ),
-          const SizedBox(height: 24), // Başlık ile kartlar arasına boşluk
+          const SizedBox(
+            height: 24,
+          ), // Başlık ile kartlar arası nefes alma boşluğu
 
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
-              crossAxisSpacing: 16, // Kartlar arası yatay boşluk
-              mainAxisSpacing: 16, // Kartlar arası dikey boşluk
-              childAspectRatio:
-                  1.1, // Kartların kare değil, hafif dikdörtgen olmasını sağlar
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 1.05, // Kartları biraz daha dengeli yapar
+              physics: const BouncingScrollPhysics(),
               children: const [
-                SummaryCardComponent(),
-                SummaryCardComponent(),
-                SummaryCardComponent(),
-                SummaryCardComponent(),
+                // Verileri State'ten alacağın zaman buraya parametre geçersin
+                SummaryCardComponent(
+                  title: "Toplam Harcama",
+                  amount: "₺ 3.145,20",
+                  icon: Icons.account_balance_wallet_outlined,
+                  isPrimary: true,
+                ),
+                SummaryCardComponent(
+                  title: "Araç Masrafı",
+                  amount: "₺ 650,00",
+                  icon: Icons.directions_car_outlined,
+                ),
+                SummaryCardComponent(
+                  title: "Yemek & Kafe",
+                  amount: "₺ 890,50",
+                  icon: Icons.restaurant_outlined,
+                ),
+                SummaryCardComponent(
+                  title: "Genel Bütçe",
+                  amount: "₺ 1.604,70",
+                  icon: Icons.pie_chart_outline,
+                ),
               ],
             ),
           ),
