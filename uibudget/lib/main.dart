@@ -622,6 +622,41 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               const SizedBox(height: 8),
 
+              // ListTile(
+              //   contentPadding: EdgeInsets.zero,
+              //   leading: Container(
+              //     padding: const EdgeInsets.all(10),
+              //     decoration: BoxDecoration(
+              //       color: colors.secondary.withOpacity(0.1),
+              //       shape: BoxShape.circle,
+              //     ),
+              //     child: Icon(Icons.edit_note, color: colors.secondary),
+              //   ),
+              //   title: Text(
+              //     "Manuel Giriş Yap",
+              //     style: TextStyle(
+              //       color: colors.onSurface,
+              //       fontWeight: FontWeight.w600,
+              //     ),
+              //   ),
+              //   subtitle: Text(
+              //     "Harcama detaylarını kendin gir",
+              //     style: TextStyle(
+              //       color: colors.onSurfaceVariant,
+              //       fontSize: 12,
+              //     ),
+              //   ),
+              //   onTap: () {
+              //     Navigator.pop(context);
+              //     Navigator.push(
+              //       context,
+              //       MaterialPageRoute(
+              //         builder: (context) =>
+              //             AddExpensePage(initialCategory: initialCategory),
+              //       ),
+              //     );
+              //   },
+              // ),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: Container(
@@ -647,14 +682,18 @@ class _MyHomePageState extends State<MyHomePage> {
                   ),
                 ),
                 onTap: () {
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Bottom sheet'i kapat
                   Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) =>
                           AddExpensePage(initialCategory: initialCategory),
                     ),
-                  );
+                  ).then((_) {
+                    // YENİ EKLENDİ: Ekleme sayfasından dönüldüğünde ekranı yenile
+                    // Bu sayede sayfalar API'den yeni veriyi çeker
+                    setState(() {});
+                  });
                 },
               ),
               const SizedBox(height: 32),
