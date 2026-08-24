@@ -16,6 +16,7 @@ public class UserDbContext : DbContext,IUserDbContext
     public DbSet<OtherCarOrder> OtherCarOrders { get; set; }
     public DbSet<ParkingOrder> ParkingOrders { get; set; }
     public DbSet<PassingOrder> PassingOrders { get; set; }
+    public DbSet<TransportationOrder> TransportationOrders { get; set; }
 
     public override int SaveChanges()
     {
