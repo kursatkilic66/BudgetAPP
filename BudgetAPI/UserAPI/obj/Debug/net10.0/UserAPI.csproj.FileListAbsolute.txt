@@ -154,3 +154,4 @@ C:\Users\Kursat\BudgetApp\BudgetAPI\UserAPI\bin\Debug\net10.0\zh-Hant\Microsoft.
 C:\Users\Kursat\BudgetApp\BudgetAPI\UserAPI\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
 C:\Users\Kursat\BudgetApp\BudgetAPI\UserAPI\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
 C:\Users\Kursat\BudgetApp\BudgetAPI\UserAPI\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\Kursat\BudgetApp\BudgetAPI\UserAPI\obj\Debug\net10.0\UserAPI.sourcelink.json
