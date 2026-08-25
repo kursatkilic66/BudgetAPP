@@ -11,12 +11,13 @@
 // }
 
 // class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
-//   // TODO: Kendi .NET API adresini buraya yaz
 //   final String _baseUrl = "http://10.0.2.2:5268";
 
 //   bool _isLoading = true;
 //   List<Map<String, dynamic>> lifeExpenses = [];
 //   double _totalMonthlyExpense = 0.0;
+//   double _foodTotal = 0.0;
+//   double _transportTotal = 0.0;
 
 //   @override
 //   void initState() {
@@ -49,25 +50,23 @@
 //     }
 //   }
 
-//   // --- API'DEN YAŞAM HARCAMALARINI ÇEKME ---
 //   Future<void> _fetchLifeExpenses() async {
 //     setState(() => _isLoading = true);
 //     List<Map<String, dynamic>> tempList = [];
-//     double total = 0;
+//     double foodAmount = 0;
+//     double transportAmount = 0;
 
 //     try {
+//       // 1. Yemek Giderleri
 //       final foodRes = await http.get(Uri.parse("$_baseUrl/api/FoodOrders"));
 //       if (foodRes.statusCode == 200) {
 //         for (var item in jsonDecode(foodRes.body)) {
 //           double price = (item['price'] ?? item['Price'] ?? 0).toDouble();
-//           total += price;
+//           foodAmount += price;
 
 //           tempList.add({
-//             "title": item['food_name'] ?? item['Food_name'] ?? "Yemek Gideri",
-//             "description":
-//                 item['restaurant'] ??
-//                 item['Restaurant'] ??
-//                 "Mekan Belirtilmedi",
+//             "title": item['food_name'] ?? item['Food_name'] ?? "Yemek",
+//             "description": item['restaurant'] ?? item['Restaurant'] ?? "Mekan",
 //             "amount": "₺ $price",
 //             "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
 //             "sortDate":
@@ -80,11 +79,37 @@
 //         }
 //       }
 
+//       // 2. Ulaşım Giderleri
+//       final transRes = await http.get(
+//         Uri.parse("$_baseUrl/api/TransportationOrders"),
+//       );
+//       if (transRes.statusCode == 200) {
+//         for (var item in jsonDecode(transRes.body)) {
+//           double price = (item['amount'] ?? item['Amount'] ?? 0).toDouble();
+//           transportAmount += price;
+
+//           tempList.add({
+//             "title": "Ulaşım",
+//             "description": item['name'] ?? item['Name'] ?? "Ulaşım Gideri",
+//             "amount": "₺ $price",
+//             "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
+//             "sortDate":
+//                 DateTime.tryParse(
+//                   item['createdAt'] ?? item['CreatedAt'] ?? "",
+//                 ) ??
+//                 DateTime.now(),
+//             "icon": Icons.directions_bus_outlined,
+//           });
+//         }
+//       }
+
 //       tempList.sort((a, b) => b["sortDate"].compareTo(a["sortDate"]));
 
 //       setState(() {
 //         lifeExpenses = tempList;
-//         _totalMonthlyExpense = total;
+//         _foodTotal = foodAmount;
+//         _transportTotal = transportAmount;
+//         _totalMonthlyExpense = foodAmount + transportAmount;
 //       });
 //     } catch (e) {
 //       print("API Hatası (Yaşam): $e");
@@ -104,7 +129,6 @@
 //         child: Column(
 //           crossAxisAlignment: CrossAxisAlignment.start,
 //           children: [
-//             // --- 1. GENEL AYLIK ÖZET KARTI ---
 //             Container(
 //               width: double.infinity,
 //               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -144,29 +168,28 @@
 //             ),
 //             const SizedBox(height: 16),
 
-//             // --- 2. KATEGORİ BAZLI 3'LÜ KART ALANI ---
 //             Row(
-//               children: const [
-//                 Expanded(
+//               children: [
+//                 const Expanded(
 //                   child: SummaryCardComponent(
 //                     title: "Konut",
 //                     amount: "₺ 0",
 //                     icon: Icons.home_outlined,
 //                   ),
 //                 ),
-//                 SizedBox(width: 8),
+//                 const SizedBox(width: 8),
 //                 Expanded(
 //                   child: SummaryCardComponent(
 //                     title: "Gıda",
-//                     amount: "₺ 0",
+//                     amount: "₺ $_foodTotal",
 //                     icon: Icons.restaurant_outlined,
 //                   ),
 //                 ),
-//                 SizedBox(width: 8),
+//                 const SizedBox(width: 8),
 //                 Expanded(
 //                   child: SummaryCardComponent(
 //                     title: "Ulaşım",
-//                     amount: "₺ 0",
+//                     amount: "₺ $_transportTotal",
 //                     icon: Icons.directions_bus_outlined,
 //                   ),
 //                 ),
@@ -174,7 +197,6 @@
 //             ),
 //             const SizedBox(height: 32),
 
-//             // --- 3. LİSTE BAŞLIĞI ---
 //             Text(
 //               "Yaşam & Gider Geçmişi",
 //               style: TextStyle(
@@ -186,7 +208,6 @@
 //             ),
 //             const SizedBox(height: 16),
 
-//             // --- 4. DİNAMİK LİSTE VEYA BOŞ DURUM ---
 //             if (_isLoading)
 //               const Center(child: CircularProgressIndicator())
 //             else if (lifeExpenses.isEmpty)
@@ -318,6 +339,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uibudget/components/SummaryCardComponent.dart';
 
 class LifeAndExpensesPage extends StatefulWidget {
@@ -333,6 +355,8 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
   bool _isLoading = true;
   List<Map<String, dynamic>> lifeExpenses = [];
   double _totalMonthlyExpense = 0.0;
+  double _foodTotal = 0.0;
+  double _transportTotal = 0.0;
 
   @override
   void initState() {
@@ -367,23 +391,27 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
 
   Future<void> _fetchLifeExpenses() async {
     setState(() => _isLoading = true);
-    List<Map<String, dynamic>> tempList = [];
-    double total = 0;
 
     try {
-      final foodRes = await http.get(Uri.parse("$_baseUrl/api/FoodOrders"));
+      final prefs = await SharedPreferences.getInstance();
+      final int currentUserId = prefs.getInt('userId') ?? 0;
+
+      List<Map<String, dynamic>> tempList = [];
+      double foodAmount = 0;
+      double transportAmount = 0;
+
+      // 1. Yemek Giderlerini dinamik ID ile çek
+      final foodRes = await http.get(
+        Uri.parse("$_baseUrl/api/FoodOrders/$currentUserId"),
+      );
       if (foodRes.statusCode == 200) {
         for (var item in jsonDecode(foodRes.body)) {
-          // .NET entity alan adlarına uyumlu kontrol (price veya Price)
           double price = (item['price'] ?? item['Price'] ?? 0).toDouble();
-          total += price;
+          foodAmount += price;
 
           tempList.add({
-            "title": item['food_name'] ?? item['Food_name'] ?? "Yemek Gideri",
-            "description":
-                item['restaurant'] ??
-                item['Restaurant'] ??
-                "Mekan Belirtilmedi",
+            "title": item['food_name'] ?? item['Food_name'] ?? "Yemek",
+            "description": item['restaurant'] ?? item['Restaurant'] ?? "Mekan",
             "amount": "₺ $price",
             "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
             "sortDate":
@@ -396,11 +424,37 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
         }
       }
 
+      // 2. Ulaşım Giderlerini dinamik ID ile çek
+      final transRes = await http.get(
+        Uri.parse("$_baseUrl/api/TransportationOrders/$currentUserId"),
+      );
+      if (transRes.statusCode == 200) {
+        for (var item in jsonDecode(transRes.body)) {
+          double price = (item['amount'] ?? item['Amount'] ?? 0).toDouble();
+          transportAmount += price;
+
+          tempList.add({
+            "title": "Ulaşım",
+            "description": item['name'] ?? item['Name'] ?? "Ulaşım Gideri",
+            "amount": "₺ $price",
+            "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
+            "sortDate":
+                DateTime.tryParse(
+                  item['createdAt'] ?? item['CreatedAt'] ?? "",
+                ) ??
+                DateTime.now(),
+            "icon": Icons.directions_bus_outlined,
+          });
+        }
+      }
+
       tempList.sort((a, b) => b["sortDate"].compareTo(a["sortDate"]));
 
       setState(() {
         lifeExpenses = tempList;
-        _totalMonthlyExpense = total;
+        _foodTotal = foodAmount;
+        _transportTotal = transportAmount;
+        _totalMonthlyExpense = foodAmount + transportAmount;
       });
     } catch (e) {
       print("API Hatası (Yaşam): $e");
@@ -420,7 +474,6 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- 1. DİNAMİK TOPLAM GİDER KARTI ---
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
@@ -460,7 +513,6 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
             ),
             const SizedBox(height: 16),
 
-            // --- 2. KATEGORİ BAZLI 3'LÜ KART (Gıda tutarı dinamikleşti) ---
             Row(
               children: [
                 const Expanded(
@@ -474,16 +526,15 @@ class _LifeAndExpensesPageState extends State<LifeAndExpensesPage> {
                 Expanded(
                   child: SummaryCardComponent(
                     title: "Gıda",
-                    amount:
-                        "₺ $_totalMonthlyExpense", // Gıda harcamaları buraya yansır
+                    amount: "₺ $_foodTotal",
                     icon: Icons.restaurant_outlined,
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(
+                Expanded(
                   child: SummaryCardComponent(
                     title: "Ulaşım",
-                    amount: "₺ 0",
+                    amount: "₺ $_transportTotal",
                     icon: Icons.directions_bus_outlined,
                   ),
                 ),

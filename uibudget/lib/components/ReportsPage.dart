@@ -1,4 +1,8 @@
+// import 'dart:convert';
+// import 'dart:math';
 // import 'package:flutter/material.dart';
+// import 'package:http/http.dart' as http;
+// import 'package:shared_preferences/shared_preferences.dart';
 
 // class ReportsPage extends StatefulWidget {
 //   const ReportsPage({super.key});
@@ -8,13 +12,82 @@
 // }
 
 // class _ReportsPageState extends State<ReportsPage> {
+//   final String _baseUrl = "http://10.0.2.2:5268";
+
+//   bool _isLoading = true;
+//   double _totalCar = 0;
+//   double _totalFood = 0;
+//   double _totalExpense = 0;
+//   double _generalBudget = 0.0;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _fetchReportData();
+//   }
+
+//   Future<void> _fetchReportData() async {
+//     setState(() => _isLoading = true);
+//     double carTotal = 0;
+//     double foodTotal = 0;
+
+//     try {
+//       final prefs = await SharedPreferences.getInstance();
+//       _generalBudget = prefs.getDouble('generalBudget') ?? 0.0;
+
+//       final fuelRes = await http.get(Uri.parse("$_baseUrl/api/FuelOrders"));
+//       if (fuelRes.statusCode == 200)
+//         for (var item in jsonDecode(fuelRes.body))
+//           carTotal += (item['total_price'] ?? item['Total_price'] ?? 0)
+//               .toDouble();
+
+//       final parkRes = await http.get(Uri.parse("$_baseUrl/api/ParkingOrders"));
+//       if (parkRes.statusCode == 200)
+//         for (var item in jsonDecode(parkRes.body))
+//           carTotal += (item['total_price'] ?? item['Total_price'] ?? 0)
+//               .toDouble();
+
+//       final passRes = await http.get(Uri.parse("$_baseUrl/api/PassingOrders"));
+//       if (passRes.statusCode == 200)
+//         for (var item in jsonDecode(passRes.body))
+//           carTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+
+//       final otherRes = await http.get(
+//         Uri.parse("$_baseUrl/api/OtherCarOrders"),
+//       );
+//       if (otherRes.statusCode == 200)
+//         for (var item in jsonDecode(otherRes.body))
+//           carTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+
+//       final foodRes = await http.get(Uri.parse("$_baseUrl/api/FoodOrders"));
+//       if (foodRes.statusCode == 200)
+//         for (var item in jsonDecode(foodRes.body))
+//           foodTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+
+//       // Ulaşım
+//       final transRes = await http.get(
+//         Uri.parse("$_baseUrl/api/TransportationOrders"),
+//       );
+//       if (transRes.statusCode == 200)
+//         for (var item in jsonDecode(transRes.body))
+//           foodTotal += (item['amount'] ?? item['Amount'] ?? 0).toDouble();
+
+//       setState(() {
+//         _totalCar = carTotal;
+//         _totalFood = foodTotal;
+//         _totalExpense = carTotal + foodTotal;
+//       });
+//     } catch (e) {
+//       print("Rapor Hatası: $e");
+//     } finally {
+//       setState(() => _isLoading = false);
+//     }
+//   }
+
 //   @override
 //   Widget build(BuildContext context) {
 //     final colors = Theme.of(context).colorScheme;
-
-//     // --- VERİ YOK SENARYOSU ---
-//     // İleride veritabanından veri çektiğinde, liste boşsa bu değeri false yapacaksın.
-//     bool hasData = false;
+//     bool hasData = _totalExpense > 0;
 
 //     return SingleChildScrollView(
 //       physics: const BouncingScrollPhysics(),
@@ -22,94 +95,107 @@
 //       child: Column(
 //         crossAxisAlignment: CrossAxisAlignment.start,
 //         children: [
-//           // --- 1. AYLIK HEDEF SAĞLIĞI ---
 //           _buildTargetHealthCard(colors, hasData),
 //           const SizedBox(height: 16),
 
-//           // --- 2. ORTA BÖLÜM (KATEGORİLER & KARŞILAŞTIRMA) ---
-//           Row(
-//             children: [
-//               Expanded(child: _buildCategoriesCard(colors, hasData)),
-//               const SizedBox(width: 16),
-//               Expanded(child: _buildComparisonCard(colors, hasData)),
-//             ],
-//           ),
-//           const SizedBox(height: 24),
-
-//           // --- 3. TEMEL ANALİZ & İPUÇLARI BAŞLIĞI ---
-//           Text(
-//             "TEMEL ANALİZ & İPUÇLARI",
-//             style: TextStyle(
-//               fontSize: 14,
-//               fontWeight: FontWeight.w800,
-//               color: colors.onSurface,
-//               letterSpacing: 1.2,
+//           if (_isLoading)
+//             const Center(child: CircularProgressIndicator())
+//           else ...[
+//             Row(
+//               children: [
+//                 Expanded(child: _buildCategoriesCard(colors, hasData)),
+//                 const SizedBox(width: 16),
+//                 Expanded(child: _buildComparisonCard(colors, hasData)),
+//               ],
 //             ),
-//           ),
-//           const SizedBox(height: 12),
+//             const SizedBox(height: 24),
 
-//           // --- 4. İPUÇLARI LİSTESİ VEYA BOŞ DURUM ---
-//           hasData
-//               ? Column(
-//                   children: [
-//                     _buildInsightCard(
-//                       colors,
-//                       title: "Yemek Harcamanız Düştü!",
-//                       description:
-//                           "Önceki aya göre %15 tasarruf ettiniz. İyi İş!",
-//                       icon: Icons.restaurant_menu,
-//                       isPositive: true,
-//                     ),
-//                     _buildInsightCard(
-//                       colors,
-//                       title: "Yakıt Maliyeti Artışı!",
-//                       description:
-//                           "Yakıt fiyatları ve tüketim arttı. Daha verimli sürüş deneyin.",
-//                       icon: Icons.trending_up,
-//                       isPositive: false,
-//                     ),
-//                   ],
-//                 )
-//               : Container(
-//                   width: double.infinity,
-//                   padding: const EdgeInsets.symmetric(
-//                     vertical: 30,
-//                     horizontal: 20,
-//                   ),
-//                   decoration: BoxDecoration(
-//                     color: Theme.of(context).cardColor,
-//                     borderRadius: BorderRadius.circular(16),
-//                     border: Border.all(
-//                       color: colors.onSurfaceVariant.withOpacity(0.15),
-//                     ),
-//                   ),
-//                   child: Column(
-//                     mainAxisAlignment: MainAxisAlignment.center,
+//             Text(
+//               "TEMEL ANALİZ & İPUÇLARI",
+//               style: TextStyle(
+//                 fontSize: 14,
+//                 fontWeight: FontWeight.w800,
+//                 color: colors.onSurface,
+//                 letterSpacing: 1.2,
+//               ),
+//             ),
+//             const SizedBox(height: 12),
+
+//             hasData
+//                 ? Column(
 //                     children: [
-//                       Icon(
-//                         Icons.auto_graph,
-//                         size: 40,
-//                         color: colors.onSurfaceVariant.withOpacity(0.4),
-//                       ),
-//                       const SizedBox(height: 12),
-//                       Text(
-//                         "Akıllı analizler için henüz yeterli harcama verisi bulunmuyor.",
-//                         textAlign: TextAlign.center,
-//                         style: TextStyle(
-//                           color: colors.onSurfaceVariant,
-//                           fontSize: 14,
-//                           fontWeight: FontWeight.w500,
+//                       if (_totalCar > _totalFood)
+//                         _buildInsightCard(
+//                           colors,
+//                           title: "Araç Giderleri Yüksek!",
+//                           description: "Bütçenizin büyük kısmı araca gidiyor.",
+//                           icon: Icons.directions_car,
+//                           isPositive: false,
+//                         )
+//                       else
+//                         _buildInsightCard(
+//                           colors,
+//                           title: "Araç Tasarrufu",
+//                           description: "Araç harcamalarınız dengeli ilerliyor.",
+//                           icon: Icons.thumb_up,
+//                           isPositive: true,
 //                         ),
-//                       ),
+
+//                       if (_generalBudget > 0)
+//                         _buildInsightCard(
+//                           colors,
+//                           title: "Bütçe Durumu",
+//                           description:
+//                               "Toplam hedefin ${((_totalExpense / _generalBudget) * 100).toStringAsFixed(1)}%'i kullanıldı.",
+//                           icon: Icons.pie_chart,
+//                           isPositive: true,
+//                         ),
 //                     ],
+//                   )
+//                 : Container(
+//                     width: double.infinity,
+//                     padding: const EdgeInsets.symmetric(
+//                       vertical: 30,
+//                       horizontal: 20,
+//                     ),
+//                     decoration: BoxDecoration(
+//                       color: Theme.of(context).cardColor,
+//                       borderRadius: BorderRadius.circular(16),
+//                       border: Border.all(
+//                         color: colors.onSurfaceVariant.withOpacity(0.15),
+//                       ),
+//                     ),
+//                     child: Column(
+//                       children: [
+//                         Icon(
+//                           Icons.auto_graph,
+//                           size: 40,
+//                           color: colors.onSurfaceVariant.withOpacity(0.4),
+//                         ),
+//                         const SizedBox(height: 12),
+//                         Text(
+//                           "Akıllı analizler için henüz yeterli harcama verisi bulunmuyor.",
+//                           textAlign: TextAlign.center,
+//                           style: TextStyle(
+//                             color: colors.onSurfaceVariant,
+//                             fontSize: 14,
+//                             fontWeight: FontWeight.w500,
+//                           ),
+//                         ),
+//                       ],
+//                     ),
 //                   ),
-//                 ),
+//           ],
 //         ],
 //       ),
 //     );
 //   }
 
 //   Widget _buildTargetHealthCard(ColorScheme colors, bool hasData) {
+//     double ratio = (hasData && _generalBudget > 0)
+//         ? (_totalExpense / _generalBudget)
+//         : 0;
+
 //     return Container(
 //       padding: const EdgeInsets.all(20),
 //       decoration: BoxDecoration(
@@ -144,16 +230,18 @@
 //                       strokeWidth: 10,
 //                       color: colors.onSurfaceVariant.withOpacity(0.2),
 //                     ),
-//                     if (hasData)
+//                     if (hasData && _generalBudget > 0)
 //                       CircularProgressIndicator(
-//                         value: 0.68,
+//                         value: ratio,
 //                         strokeWidth: 10,
 //                         color: colors.primary,
 //                         backgroundColor: Colors.transparent,
 //                       ),
 //                     Center(
 //                       child: Text(
-//                         hasData ? "68%" : "%0",
+//                         hasData && _generalBudget > 0
+//                             ? "%${(ratio * 100).toInt()}"
+//                             : "%0",
 //                         style: TextStyle(
 //                           fontSize: 18,
 //                           fontWeight: FontWeight.bold,
@@ -168,7 +256,7 @@
 //                 crossAxisAlignment: CrossAxisAlignment.end,
 //                 children: [
 //                   Text(
-//                     hasData ? "₺ 8.500" : "₺ 0",
+//                     hasData ? "₺ ${_totalExpense.toStringAsFixed(0)}" : "₺ 0",
 //                     style: TextStyle(
 //                       fontSize: 22,
 //                       fontWeight: FontWeight.bold,
@@ -176,7 +264,9 @@
 //                     ),
 //                   ),
 //                   Text(
-//                     hasData ? "₺ 12.500" : "Hedef Belirlenmedi",
+//                     _generalBudget > 0
+//                         ? "Hedef: ₺ ${_generalBudget.toStringAsFixed(0)}"
+//                         : "Hedef Belirlenmedi",
 //                     style: TextStyle(
 //                       fontSize: 14,
 //                       fontWeight: FontWeight.w500,
@@ -187,19 +277,15 @@
 //               ),
 //             ],
 //           ),
-//           const SizedBox(height: 20),
-//           Text(
-//             hasData
-//                 ? "Harcama hızınız iyi, hedefin gerisindesiniz."
-//                 : "Bütçe hedeflerinizi Ayarlar'dan belirleyebilirsiniz.",
-//             style: TextStyle(fontSize: 13, color: colors.onSurfaceVariant),
-//           ),
 //         ],
 //       ),
 //     );
 //   }
 
 //   Widget _buildCategoriesCard(ColorScheme colors, bool hasData) {
+//     double carRatio = hasData ? (_totalCar / _totalExpense) : 0;
+//     double foodRatio = hasData ? (_totalFood / _totalExpense) : 0;
+
 //     return Container(
 //       height: 240,
 //       padding: const EdgeInsets.all(16),
@@ -229,10 +315,11 @@
 //               width: 90,
 //               height: 90,
 //               child: CustomPaint(
-//                 painter: _DonutChartPainter(
+//                 painter: _DynamicDonutChartPainter(
 //                   color1: colors.primary,
 //                   color2: colors.secondary,
-//                   color3: colors.onSurfaceVariant.withOpacity(0.5),
+//                   carRatio: carRatio,
+//                   foodRatio: foodRatio,
 //                 ),
 //               ),
 //             )
@@ -244,9 +331,19 @@
 //             ),
 //           const Spacer(),
 //           if (hasData) ...[
-//             _buildLegendItem("Araç", "28%", colors.primary, colors),
+//             _buildLegendItem(
+//               "Araç",
+//               "%${(carRatio * 100).toInt()}",
+//               colors.primary,
+//               colors,
+//             ),
 //             const SizedBox(height: 6),
-//             _buildLegendItem("Yaşam", "25%", colors.secondary, colors),
+//             _buildLegendItem(
+//               "Yaşam",
+//               "%${(foodRatio * 100).toInt()}",
+//               colors.secondary,
+//               colors,
+//             ),
 //           ] else
 //             Text(
 //               "Veri Bekleniyor",
@@ -283,7 +380,7 @@
 //           ),
 //           const SizedBox(height: 8),
 //           Text(
-//             hasData ? "-16.6%" : "-",
+//             hasData ? "Aktif" : "-",
 //             style: TextStyle(
 //               fontSize: 14,
 //               fontWeight: FontWeight.bold,
@@ -291,19 +388,25 @@
 //             ),
 //           ),
 //           const Spacer(),
-//           if (hasData)
+//           if (hasData && _generalBudget > 0)
 //             Row(
 //               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 //               crossAxisAlignment: CrossAxisAlignment.end,
 //               children: [
 //                 _buildBarColumn(
-//                   "Geçen Ay",
-//                   "₺10.2k",
+//                   "Hedef",
+//                   "₺${(_generalBudget / 1000).toStringAsFixed(1)}k",
 //                   100,
 //                   colors.onSurfaceVariant.withOpacity(0.5),
 //                   colors,
 //                 ),
-//                 _buildBarColumn("Bu Ay", "₺8.5k", 80, colors.primary, colors),
+//                 _buildBarColumn(
+//                   "Şu An",
+//                   "₺${(_totalExpense / 1000).toStringAsFixed(1)}k",
+//                   (_totalExpense / _generalBudget) * 100,
+//                   colors.primary,
+//                   colors,
+//                 ),
 //               ],
 //             )
 //           else
@@ -312,7 +415,7 @@
 //               size: 64,
 //               color: colors.onSurfaceVariant.withOpacity(0.3),
 //             ),
-//           if (!hasData) const Spacer(),
+//           if (!hasData || _generalBudget <= 0) const Spacer(),
 //         ],
 //       ),
 //     );
@@ -367,12 +470,13 @@
 //     Color barColor,
 //     ColorScheme colors,
 //   ) {
+//     double safeHeight = height > 100 ? 100 : height;
 //     return Column(
 //       mainAxisAlignment: MainAxisAlignment.end,
 //       children: [
 //         Container(
 //           width: 36,
-//           height: height,
+//           height: safeHeight,
 //           decoration: BoxDecoration(
 //             color: barColor,
 //             borderRadius: const BorderRadius.only(
@@ -451,15 +555,17 @@
 //   }
 // }
 
-// class _DonutChartPainter extends CustomPainter {
+// class _DynamicDonutChartPainter extends CustomPainter {
 //   final Color color1;
 //   final Color color2;
-//   final Color color3;
+//   final double carRatio;
+//   final double foodRatio;
 
-//   _DonutChartPainter({
+//   _DynamicDonutChartPainter({
 //     required this.color1,
 //     required this.color2,
-//     required this.color3,
+//     required this.carRatio,
+//     required this.foodRatio,
 //   });
 
 //   @override
@@ -474,26 +580,34 @@
 
 //     Paint paint = Paint()
 //       ..style = PaintingStyle.stroke
-//       ..strokeWidth = strokeWidth;
+//       ..strokeWidth = strokeWidth
+//       ..strokeCap = StrokeCap.round;
 
+//     double startAngle = -1.57;
+
+//     double carSweep = carRatio * 2 * pi;
 //     paint.color = color1;
-//     canvas.drawArc(rect, -1.57, 1.8, false, paint);
+//     if (carSweep > 0)
+//       canvas.drawArc(rect, startAngle, carSweep - 0.1, false, paint);
 
+//     startAngle += carSweep;
+//     double foodSweep = foodRatio * 2 * pi;
 //     paint.color = color2;
-//     canvas.drawArc(rect, 0.25, 1.5, false, paint);
-
-//     paint.color = color3;
-//     canvas.drawArc(rect, 1.78, 2.9, false, paint);
+//     if (foodSweep > 0)
+//       canvas.drawArc(rect, startAngle, foodSweep - 0.1, false, paint);
 //   }
 
 //   @override
-//   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+//   bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 // }
+
+// ignore_for_file: curly_braces_in_flow_control_structures
 
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -509,7 +623,7 @@ class _ReportsPageState extends State<ReportsPage> {
   double _totalCar = 0;
   double _totalFood = 0;
   double _totalExpense = 0;
-  final double _generalBudget = 12500.0;
+  double _generalBudget = 0.0;
 
   @override
   void initState() {
@@ -519,38 +633,77 @@ class _ReportsPageState extends State<ReportsPage> {
 
   Future<void> _fetchReportData() async {
     setState(() => _isLoading = true);
+
+    final prefs = await SharedPreferences.getInstance();
+    final int currentUserId = prefs.getInt('userId') ?? 0;
+
     double carTotal = 0;
     double foodTotal = 0;
 
     try {
-      final fuelRes = await http.get(Uri.parse("$_baseUrl/api/FuelOrders"));
+      // 1. Genel bütçeyi Kullanıcı Tablosundan (DB) çek
+      final userRes = await http.get(
+        Uri.parse("$_baseUrl/api/Users/$currentUserId"),
+      );
+      if (userRes.statusCode == 200) {
+        var userJson = jsonDecode(userRes.body);
+        _generalBudget =
+            (userJson['budget'] ??
+                    userJson['generalBudget'] ??
+                    userJson['GeneralBudget'] ??
+                    0)
+                .toDouble();
+      }
+
+      final fuelRes = await http.get(
+        Uri.parse("$_baseUrl/api/FuelOrders/$currentUserId"),
+      );
       if (fuelRes.statusCode == 200)
-        for (var item in jsonDecode(fuelRes.body))
+        for (var item in jsonDecode(fuelRes.body)) {
           carTotal += (item['total_price'] ?? item['Total_price'] ?? 0)
               .toDouble();
+        }
 
-      final parkRes = await http.get(Uri.parse("$_baseUrl/api/ParkingOrders"));
+      final parkRes = await http.get(
+        Uri.parse("$_baseUrl/api/ParkingOrders/$currentUserId"),
+      );
       if (parkRes.statusCode == 200)
-        for (var item in jsonDecode(parkRes.body))
+        for (var item in jsonDecode(parkRes.body)) {
           carTotal += (item['total_price'] ?? item['Total_price'] ?? 0)
               .toDouble();
+        }
 
-      final passRes = await http.get(Uri.parse("$_baseUrl/api/PassingOrders"));
+      final passRes = await http.get(
+        Uri.parse("$_baseUrl/api/PassingOrders/$currentUserId"),
+      );
       if (passRes.statusCode == 200)
-        for (var item in jsonDecode(passRes.body))
+        for (var item in jsonDecode(passRes.body)) {
           carTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+        }
 
       final otherRes = await http.get(
-        Uri.parse("$_baseUrl/api/OtherCarOrders"),
+        Uri.parse("$_baseUrl/api/OtherCarOrders/$currentUserId"),
       );
       if (otherRes.statusCode == 200)
-        for (var item in jsonDecode(otherRes.body))
+        for (var item in jsonDecode(otherRes.body)) {
           carTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+        }
 
-      final foodRes = await http.get(Uri.parse("$_baseUrl/api/FoodOrders"));
+      final foodRes = await http.get(
+        Uri.parse("$_baseUrl/api/FoodOrders/$currentUserId"),
+      );
       if (foodRes.statusCode == 200)
-        for (var item in jsonDecode(foodRes.body))
+        for (var item in jsonDecode(foodRes.body)) {
           foodTotal += (item['price'] ?? item['Price'] ?? 0).toDouble();
+        }
+
+      final transRes = await http.get(
+        Uri.parse("$_baseUrl/api/TransportationOrders/$currentUserId"),
+      );
+      if (transRes.statusCode == 200)
+        for (var item in jsonDecode(transRes.body)) {
+          foodTotal += (item['amount'] ?? item['Amount'] ?? 0).toDouble();
+        }
 
       setState(() {
         _totalCar = carTotal;
@@ -621,14 +774,15 @@ class _ReportsPageState extends State<ReportsPage> {
                           isPositive: true,
                         ),
 
-                      _buildInsightCard(
-                        colors,
-                        title: "Bütçe Durumu",
-                        description:
-                            "Toplam hedefin ${((_totalExpense / _generalBudget) * 100).toStringAsFixed(1)}%'i kullanıldı.",
-                        icon: Icons.pie_chart,
-                        isPositive: true,
-                      ),
+                      if (_generalBudget > 0)
+                        _buildInsightCard(
+                          colors,
+                          title: "Bütçe Durumu",
+                          description:
+                              "Toplam hedefin ${((_totalExpense / _generalBudget) * 100).toStringAsFixed(1)}%'i kullanıldı.",
+                          icon: Icons.pie_chart,
+                          isPositive: true,
+                        ),
                     ],
                   )
                 : Container(
@@ -671,7 +825,9 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   Widget _buildTargetHealthCard(ColorScheme colors, bool hasData) {
-    double ratio = hasData ? (_totalExpense / _generalBudget) : 0;
+    double ratio = (hasData && _generalBudget > 0)
+        ? (_totalExpense / _generalBudget)
+        : 0;
 
     return Container(
       padding: const EdgeInsets.all(20),
@@ -707,7 +863,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       strokeWidth: 10,
                       color: colors.onSurfaceVariant.withOpacity(0.2),
                     ),
-                    if (hasData)
+                    if (hasData && _generalBudget > 0)
                       CircularProgressIndicator(
                         value: ratio,
                         strokeWidth: 10,
@@ -716,7 +872,9 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                     Center(
                       child: Text(
-                        hasData ? "%${(ratio * 100).toInt()}" : "%0",
+                        hasData && _generalBudget > 0
+                            ? "%${(ratio * 100).toInt()}"
+                            : "%0",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -739,7 +897,9 @@ class _ReportsPageState extends State<ReportsPage> {
                     ),
                   ),
                   Text(
-                    "₺ ${_generalBudget.toStringAsFixed(0)}",
+                    _generalBudget > 0
+                        ? "Hedef: ₺ ${_generalBudget.toStringAsFixed(0)}"
+                        : "Hedef Belirlenmedi",
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -861,14 +1021,14 @@ class _ReportsPageState extends State<ReportsPage> {
             ),
           ),
           const Spacer(),
-          if (hasData)
+          if (hasData && _generalBudget > 0)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 _buildBarColumn(
                   "Hedef",
-                  "₺12.5k",
+                  "₺${(_generalBudget / 1000).toStringAsFixed(1)}k",
                   100,
                   colors.onSurfaceVariant.withOpacity(0.5),
                   colors,
@@ -888,7 +1048,7 @@ class _ReportsPageState extends State<ReportsPage> {
               size: 64,
               color: colors.onSurfaceVariant.withOpacity(0.3),
             ),
-          if (!hasData) const Spacer(),
+          if (!hasData || _generalBudget <= 0) const Spacer(),
         ],
       ),
     );
@@ -943,7 +1103,6 @@ class _ReportsPageState extends State<ReportsPage> {
     Color barColor,
     ColorScheme colors,
   ) {
-    // Bar yüksekliğini 100 ile sınırlıyoruz taşmayı önlemek için
     double safeHeight = height > 100 ? 100 : height;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
@@ -1057,22 +1216,22 @@ class _DynamicDonutChartPainter extends CustomPainter {
       ..strokeWidth = strokeWidth
       ..strokeCap = StrokeCap.round;
 
-    double startAngle = -1.57; // -90 dereceden (en üstten) başlar
+    double startAngle = -1.57;
 
-    // Araç Dilimi Çizimi
     double carSweep = carRatio * 2 * pi;
     paint.color = color1;
-    if (carSweep > 0)
+    if (carSweep > 0) {
       canvas.drawArc(rect, startAngle, carSweep - 0.1, false, paint);
+    }
 
-    // Yemek Dilimi Çizimi
     startAngle += carSweep;
     double foodSweep = foodRatio * 2 * pi;
     paint.color = color2;
-    if (foodSweep > 0)
+    if (foodSweep > 0) {
       canvas.drawArc(rect, startAngle, foodSweep - 0.1, false, paint);
+    }
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true; // Değerler değiştikçe yeniden çizilmesi için true yapıldı
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }

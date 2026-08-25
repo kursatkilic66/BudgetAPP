@@ -1,6 +1,7 @@
 // import 'dart:convert';
 // import 'package:flutter/material.dart';
 // import 'package:http/http.dart' as http;
+// import 'package:shared_preferences/shared_preferences.dart';
 // import 'package:uibudget/components/SummaryCardComponent.dart';
 
 // class Cardetailsandpastpage extends StatefulWidget {
@@ -76,17 +77,20 @@
 //     }
 //   }
 
-//   // --- ARACI VE HARCAMALARI API'DEN ÇEKME ---
 //   Future<void> _fetchCarDataAndExpenses() async {
 //     setState(() => _isLoading = true);
 
 //     try {
-//       // 1. Önce kayıtlı araç var mı kontrol edelim (/api/Cars)
+//       // 1. Resim Durumunu Localden Çek
+//       final prefs = await SharedPreferences.getInstance();
+//       _hasPhoto = prefs.getBool('hasCarPhoto') ?? false;
+
+//       // 2. Önce kayıtlı araç var mı kontrol edelim (/api/Cars)
 //       final carRes = await http.get(Uri.parse("$_baseUrl/api/Cars"));
 //       if (carRes.statusCode == 200) {
 //         var cars = jsonDecode(carRes.body);
 //         if (cars is List && cars.isNotEmpty) {
-//           var car = cars[0]; // Şimdilik ilk aracı baz alıyoruz
+//           var car = cars[0];
 //           setState(() {
 //             _hasCarData = true;
 //             _carTitle = car['title'] ?? car['Title'] ?? "Aracım";
@@ -99,7 +103,6 @@
 //         }
 //       }
 
-//       // 2. Harcamaları Çek (Önceki mantıkla aynı)
 //       List<Map<String, dynamic>> tempList = [];
 
 //       final fuelRes = await http.get(Uri.parse("$_baseUrl/api/FuelOrders"));
@@ -107,7 +110,7 @@
 //         for (var item in jsonDecode(fuelRes.body)) {
 //           tempList.add({
 //             "title": "Yakıt Alımı",
-//             "description": "İstasyon: ${item['station'] ?? 'Bilinmiyor'}",
+//             "description": "İstasyon: Petrol Ofisi",
 //             "amount": "₺ ${item['total_price'] ?? item['Total_price'] ?? 0}",
 //             "date": _formatDate(item['orderAt'] ?? item['OrderAt']),
 //             "sortDate":
@@ -138,6 +141,44 @@
 //         }
 //       }
 
+//       final passRes = await http.get(Uri.parse("$_baseUrl/api/PassingOrders"));
+//       if (passRes.statusCode == 200) {
+//         for (var item in jsonDecode(passRes.body)) {
+//           tempList.add({
+//             "title": "Geçiş (Otoyol/Köprü)",
+//             "description": item['name'] ?? item['Name'] ?? "Geçiş",
+//             "amount": "₺ ${item['price'] ?? item['Price'] ?? 0}",
+//             "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
+//             "sortDate":
+//                 DateTime.tryParse(
+//                   item['createdAt'] ?? item['CreatedAt'] ?? "",
+//                 ) ??
+//                 DateTime.now(),
+//             "icon": Icons.sensors,
+//           });
+//         }
+//       }
+
+//       final otherRes = await http.get(
+//         Uri.parse("$_baseUrl/api/OtherCarOrders"),
+//       );
+//       if (otherRes.statusCode == 200) {
+//         for (var item in jsonDecode(otherRes.body)) {
+//           tempList.add({
+//             "title": "Araç Bakım/Diğer",
+//             "description": item['name'] ?? item['Name'] ?? "Ekstra Gider",
+//             "amount": "₺ ${item['price'] ?? item['Price'] ?? 0}",
+//             "date": _formatDate(item['createdAt'] ?? item['CreatedAt']),
+//             "sortDate":
+//                 DateTime.tryParse(
+//                   item['createdAt'] ?? item['CreatedAt'] ?? "",
+//                 ) ??
+//                 DateTime.now(),
+//             "icon": Icons.build_circle_outlined,
+//           });
+//         }
+//       }
+
 //       tempList.sort((a, b) => b["sortDate"].compareTo(a["sortDate"]));
 //       setState(() {
 //         expenses = tempList;
@@ -149,11 +190,9 @@
 //     }
 //   }
 
-//   // --- ARACI API'YE KAYDETME (POST /api/Cars) ---
 //   Future<void> _submitCarToApi() async {
 //     setState(() => _isSavingCar = true);
 
-//     // Senin belirttiğin şablona birebir uygun payload[cite: 3]
 //     Map<String, dynamic> carPayload = {
 //       "title": _titleController.text,
 //       "brand": _brandController.text,
@@ -161,28 +200,43 @@
 //       "year": int.tryParse(_yearController.text) ?? 0,
 //       "kilometer": int.tryParse(_kmController.text) ?? 0,
 //       "tankSize": int.tryParse(_tankController.text) ?? 0,
-//       "user_id": 1, // Şimdilik Sabit Kullanıcı ID
+//       "user_id": 1,
 //     };
 
 //     try {
-//       final response = await http.post(
-//         Uri.parse("$_baseUrl/api/Cars"),
-//         headers: {"Content-Type": "application/json"},
-//         body: jsonEncode(carPayload),
-//       );
+//       http.Response response;
 
-//       if (response.statusCode == 200 || response.statusCode == 201) {
+//       if (_hasCarData) {
+//         // Zaten araç varsa Güncelleme Yap (PUT) - ID'sini 1 kabul ediyoruz
+//         carPayload["id"] = 1;
+//         response = await http.put(
+//           Uri.parse("$_baseUrl/api/Cars/1"),
+//           headers: {"Content-Type": "application/json"},
+//           body: jsonEncode(carPayload),
+//         );
+//       } else {
+//         // Araç yoksa Yeni Ekle (POST)
+//         response = await http.post(
+//           Uri.parse("$_baseUrl/api/Cars"),
+//           headers: {"Content-Type": "application/json"},
+//           body: jsonEncode(carPayload),
+//         );
+//       }
+
+//       if (response.statusCode == 200 ||
+//           response.statusCode == 201 ||
+//           response.statusCode == 204) {
 //         if (!mounted) return;
-//         Navigator.pop(context); // Formu kapat
+//         Navigator.pop(context);
 //         ScaffoldMessenger.of(context).showSnackBar(
 //           SnackBar(
-//             content: const Text("Araç başarıyla kaydedildi!"),
+//             content: const Text("Araç bilgileri başarıyla kaydedildi!"),
 //             backgroundColor: Theme.of(context).colorScheme.primary,
 //           ),
 //         );
-//         _fetchCarDataAndExpenses(); // Ekranı güncelle
+//         _fetchCarDataAndExpenses();
 //       } else {
-//         throw Exception("Araç kaydedilemedi: ${response.statusCode}");
+//         throw Exception("İşlem başarısız: ${response.statusCode}");
 //       }
 //     } catch (e) {
 //       if (!mounted) return;
@@ -236,8 +290,10 @@
 //                     fontWeight: FontWeight.w600,
 //                   ),
 //                 ),
-//                 onTap: () {
+//                 onTap: () async {
 //                   Navigator.pop(context);
+//                   final prefs = await SharedPreferences.getInstance();
+//                   await prefs.setBool('hasCarPhoto', true);
 //                   setState(() {
 //                     _hasPhoto = true;
 //                   });
@@ -263,8 +319,10 @@
 //                     fontWeight: FontWeight.w600,
 //                   ),
 //                 ),
-//                 onTap: () {
+//                 onTap: () async {
 //                   Navigator.pop(context);
+//                   final prefs = await SharedPreferences.getInstance();
+//                   await prefs.setBool('hasCarPhoto', true);
 //                   setState(() {
 //                     _hasPhoto = true;
 //                   });
@@ -392,9 +450,7 @@
 //                       borderRadius: BorderRadius.circular(16),
 //                     ),
 //                   ),
-//                   onPressed: _isSavingCar
-//                       ? null
-//                       : _submitCarToApi, // API İstasyonu Tetikleniyor
+//                   onPressed: _isSavingCar ? null : _submitCarToApi,
 //                   child: _isSavingCar
 //                       ? const CircularProgressIndicator(color: Colors.white)
 //                       : const Text(
@@ -649,7 +705,7 @@
 //                     context,
 //                     title: expense["title"],
 //                     description: expense["description"],
-//                     amount: expense["amount"],
+//                     amount: expense["amount"].toString(),
 //                     date: expense["date"],
 //                     icon: expense["icon"],
 //                     extraInfo: expense["extraInfo"],
@@ -789,6 +845,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uibudget/components/SummaryCardComponent.dart';
 
 class Cardetailsandpastpage extends StatefulWidget {
@@ -868,7 +925,14 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
     setState(() => _isLoading = true);
 
     try {
-      final carRes = await http.get(Uri.parse("$_baseUrl/api/Cars"));
+      final prefs = await SharedPreferences.getInstance();
+      _hasPhoto = prefs.getBool('hasCarPhoto') ?? false;
+      final int currentUserId = prefs.getInt('userId') ?? 0;
+
+      // 1. Araç bilgisini dinamik kullanıcı ID'sine göre çek
+      final carRes = await http.get(
+        Uri.parse("$_baseUrl/api/Cars/$currentUserId"),
+      );
       if (carRes.statusCode == 200) {
         var cars = jsonDecode(carRes.body);
         if (cars is List && cars.isNotEmpty) {
@@ -887,12 +951,14 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
 
       List<Map<String, dynamic>> tempList = [];
 
-      final fuelRes = await http.get(Uri.parse("$_baseUrl/api/FuelOrders"));
+      final fuelRes = await http.get(
+        Uri.parse("$_baseUrl/api/FuelOrders/GetAll/$currentUserId"),
+      );
       if (fuelRes.statusCode == 200) {
         for (var item in jsonDecode(fuelRes.body)) {
           tempList.add({
             "title": "Yakıt Alımı",
-            "description": "İstasyon: ${item['station'] ?? 'Bilinmiyor'}",
+            "description": "İstasyon: Petrol Ofisi",
             "amount": "₺ ${item['total_price'] ?? item['Total_price'] ?? 0}",
             "date": _formatDate(item['orderAt'] ?? item['OrderAt']),
             "sortDate":
@@ -904,7 +970,9 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
         }
       }
 
-      final parkRes = await http.get(Uri.parse("$_baseUrl/api/ParkingOrders"));
+      final parkRes = await http.get(
+        Uri.parse("$_baseUrl/api/ParkingOrders/$currentUserId"),
+      );
       if (parkRes.statusCode == 200) {
         for (var item in jsonDecode(parkRes.body)) {
           tempList.add({
@@ -923,7 +991,9 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
         }
       }
 
-      final passRes = await http.get(Uri.parse("$_baseUrl/api/PassingOrders"));
+      final passRes = await http.get(
+        Uri.parse("$_baseUrl/api/PassingOrders/$currentUserId"),
+      );
       if (passRes.statusCode == 200) {
         for (var item in jsonDecode(passRes.body)) {
           tempList.add({
@@ -942,7 +1012,7 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
       }
 
       final otherRes = await http.get(
-        Uri.parse("$_baseUrl/api/OtherCarOrders"),
+        Uri.parse("$_baseUrl/api/OtherCarOrders/$currentUserId"),
       );
       if (otherRes.statusCode == 200) {
         for (var item in jsonDecode(otherRes.body)) {
@@ -972,9 +1042,11 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
     }
   }
 
-  // --- DÜZELTİLEN KISIM: PUT VE POST AYRIMI ---
   Future<void> _submitCarToApi() async {
     setState(() => _isSavingCar = true);
+
+    final prefs = await SharedPreferences.getInstance();
+    final int currentUserId = prefs.getInt('userId') ?? 0;
 
     Map<String, dynamic> carPayload = {
       "title": _titleController.text,
@@ -983,22 +1055,22 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
       "year": int.tryParse(_yearController.text) ?? 0,
       "kilometer": int.tryParse(_kmController.text) ?? 0,
       "tankSize": int.tryParse(_tankController.text) ?? 0,
-      "user_id": 1, // Şimdilik Sabit Kullanıcı ID
+      "user_id": currentUserId,
     };
 
     try {
       http.Response response;
 
       if (_hasCarData) {
-        carPayload["id"] = 1; // Güncelleme için ID gerekli olabilir
+        carPayload["id"] = 1;
         response = await http.put(
-          Uri.parse("$_baseUrl/api/Cars/1"), // Mevcut aracı güncelle (PUT)
+          Uri.parse("$_baseUrl/api/Cars/1"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(carPayload),
         );
       } else {
         response = await http.post(
-          Uri.parse("$_baseUrl/api/Cars"), // Yeni araç ekle (POST)
+          Uri.parse("$_baseUrl/api/Cars"),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode(carPayload),
         );
@@ -1015,7 +1087,7 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
-        _fetchCarDataAndExpenses(); // UI'ı yenile
+        _fetchCarDataAndExpenses();
       } else {
         throw Exception("İşlem başarısız: ${response.statusCode}");
       }
@@ -1071,8 +1143,10 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('hasCarPhoto', true);
                   setState(() {
                     _hasPhoto = true;
                   });
@@ -1098,8 +1172,10 @@ class _CardetailandpastpageState extends State<Cardetailsandpastpage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                onTap: () {
+                onTap: () async {
                   Navigator.pop(context);
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setBool('hasCarPhoto', true);
                   setState(() {
                     _hasPhoto = true;
                   });
